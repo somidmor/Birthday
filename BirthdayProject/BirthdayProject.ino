@@ -1,10 +1,8 @@
 #include "MyRTC.h"
 #include "MyDisplay.h"
-#include "BluefruitSerial.h"
 
 MyRTC rtc;
 MyDisplay display;
-BluefruitSerial bluefruit;
 
 #define BUTTON_PIN 53
 #define DEBOUNCE_TIME 50
@@ -35,10 +33,7 @@ stateStatus gState = {
 void setup() {
   Serial.begin(57600);
   rtc.begin();
-  display.begin();
-  //bluefruit.begin();
-  bluefruit.setDeepSleep();
-  
+  display.begin();  
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   display.off();
 }

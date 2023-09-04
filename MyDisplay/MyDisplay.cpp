@@ -1,6 +1,7 @@
 #include "MyDisplay.h"
 
-U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C _u8g2(U8G2_R0, /* clock=*/ SCL1, /* data=*/ SDA1, /* reset=*/ U8X8_PIN_NONE);
+//U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C _u8g2(U8G2_R0, /* clock=*/ SCL1, /* data=*/ SDA1, /* reset=*/ U8X8_PIN_NONE);
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C _u8g2(U8G2_R0, /* clock=*/ SCL1, /* data=*/ SDA1, /* reset=*/ U8X8_PIN_NONE);
 
 MyDisplay::MyDisplay() {}
 
