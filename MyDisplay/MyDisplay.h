@@ -8,6 +8,8 @@ public:
   MyDisplay();
   void begin();
   void displayString(String message);
+  void on();
+  void off();
 };
 
 #endif

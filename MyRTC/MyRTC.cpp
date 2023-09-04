@@ -6,33 +6,72 @@ MyRTC::MyRTC() {}
 
 void MyRTC::begin() {
   _rtc.begin();
-  _rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  _rtc.initialize(); // Added this line to initialize the RTC
+  //_rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  _rtc.initialized(); // Added this line to initialize the RTC
 }
 
 String MyRTC::getFormattedDateTime() {
     DateTime now = _rtc.now();
     DateTime startDate(2022, 2, 14);
+    
+    int years, months, days, hours, minutes, seconds;
 
-    long secondsElapsed = now.unixtime() - startDate.unixtime();
-    DateTime difference(2000, 1, 1, 0, 0, secondsElapsed); // Temporarily use a placeholder epoch date
+    seconds = now.second() - startDate.second();
+    minutes = now.minute() - startDate.minute();
+    hours = now.hour() - startDate.hour();
+    days = now.day() - startDate.day();
+    months = now.month() - startDate.month();
+    years = now.year() - startDate.year();
 
-    int years = difference.year() - 2000;
-    int months = difference.month() - 1;
-    int days = difference.day() - 1;
-    int hours = difference.hour();
-    int minutes = difference.minute();
-    int seconds = difference.second();
+    if (seconds < 0) {
+        seconds += 60;
+        minutes--;
+    }
 
-    char buf[200]; // Increased buffer size to accommodate the new format
-    snprintf(buf, sizeof(buf), "%d year%s, %d month%s, %d day%s, %d hour%s, %d minute%s and %d second%s", 
-        years, years == 1 ? "" : "s",
-        months, months == 1 ? "" : "s",
-        days, days == 1 ? "" : "s",
-        hours, hours == 1 ? "" : "s",
-        minutes, minutes == 1 ? "" : "s",
-        seconds, seconds == 1 ? "" : "s"
+    if (minutes < 0) {
+        minutes += 60;
+        hours--;
+    }
+
+    if (hours < 0) {
+        hours += 24;
+        days--;
+    }
+
+    if (days < 0) {
+        // Borrow from month, adjusting for variable month lengths
+        months--;
+        if (startDate.month() == 2) {
+            days += 28 + (startDate.year() % 4 == 0); // Leap year check
+        } else if (startDate.month() == 4 || startDate.month() == 6 || startDate.month() == 9 || startDate.month() == 11) {
+            days += 30;
+        } else {
+            days += 31;
+        }
+    }
+
+    if (months < 0) {
+        months += 12;
+        years--;
+    }
+
+    char buf[200];
+    snprintf(buf, sizeof(buf), 
+        "%d years, %d months\n"
+        "%d days, %d hours\n"
+        "%d minutes, %d seconds", 
+        years, months, days, hours, minutes, seconds
     );
+
+    return String(buf);
+}
+
+String MyRTC::getCurrentDateTime() {
+    DateTime now = _rtc.now();
+    
+    char buf[40];
+    snprintf(buf, sizeof(buf), "%04d-%02d-%02d\n%02d:%02d:%02d", 
+        now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
 
     return String(buf);
 }

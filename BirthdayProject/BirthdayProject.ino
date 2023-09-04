@@ -1,53 +1,92 @@
 #include "MyRTC.h"
 #include "MyDisplay.h"
+#include "BluefruitSerial.h"
 
 MyRTC rtc;
 MyDisplay display;
+BluefruitSerial bluefruit;
 
 #define BUTTON_PIN 53
-#define DEBOUNCE_TIME 50    // Time in milliseconds
-#define DISPLAY_TIME 5000   // Time display is on in milliseconds
+#define DEBOUNCE_TIME 50
+#define DISPLAY_TIME 5000
 
-unsigned long lastDebounceTime = 0;  // Last time the button pin was toggled
-bool buttonState = HIGH;             // Current debounced button state
-unsigned long displayOnTime = 0;     // Time when display was turned on
-bool displayActive = false;          // To check if display is currently on
+unsigned long lastDebounceTime = 0;
+bool buttonState = HIGH;
+unsigned long displayOnTime = 0;
+
+enum States {
+    WAIT_FOR_BUTTON,
+    DISPLAY_DATETIME,
+    DISPLAY_TIMEOUT
+};
+
+struct stateStatus {
+    States next;
+    States current;
+    States previous;
+};
+
+stateStatus gState = {
+    .next = States::WAIT_FOR_BUTTON,
+    .current = States::WAIT_FOR_BUTTON,
+    .previous = States::WAIT_FOR_BUTTON
+};
 
 void setup() {
   Serial.begin(57600);
   rtc.begin();
   display.begin();
+  //bluefruit.begin();
+  bluefruit.setDeepSleep();
   
-  pinMode(BUTTON_PIN, INPUT_PULLUP);  // Set the button pin as input with pull-up resistor
-  
-  display.off();  // Turn off the display at the start
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  display.off();
 }
 
 void loop() {
-  // Check for button press with debounce
+  switch(gState.current) {
+    case WAIT_FOR_BUTTON:
+      waitForButton();
+      break;
+    case DISPLAY_DATETIME:
+      displayDateTime();
+      break;
+    case DISPLAY_TIMEOUT:
+      handleDisplayTimeout();
+      break;
+  }
+
+  gState.previous = gState.current;
+  gState.current = gState.next;
+  delay(50);
+}
+
+void waitForButton() {
   bool rawState = digitalRead(BUTTON_PIN);
-  if (rawState == LOW) {  // If the button is pressed (LOW because of pull-up resistor)
+  if (rawState == LOW) {
     if (millis() - lastDebounceTime > DEBOUNCE_TIME) {
-      buttonState = !buttonState;  // Toggle the button state
-      if (buttonState == LOW) {    // If the button was pressed
-        display.on();             // Turn the display on
-        displayActive = true;
+      buttonState = !buttonState;
+      if (buttonState == LOW) {
         displayOnTime = millis();
+        gState.next = States::DISPLAY_DATETIME;
       }
     }
     lastDebounceTime = millis();
   }
+}
 
-  // If display is active, show the datetime
-  if (displayActive) {
-    String dateTime = rtc.getFormattedDateTime();
-    display.displayString(dateTime);
-    Serial.println(dateTime);
+void displayDateTime() {
+  //String dateTime = rtc.getCurrentDateTime();
+  String dateTime = rtc.getFormattedDateTime();
+  display.on();
+  display.displayString(dateTime);
+  Serial.println(dateTime);
+  if (millis() - displayOnTime > DISPLAY_TIME) {
+    gState.next = States::DISPLAY_TIMEOUT;
   }
+}
 
-  // Turn off the display after DISPLAY_TIME
-  if (displayActive && (millis() - displayOnTime > DISPLAY_TIME)) {
-    display.off();
-    displayActive = false;
-  }
+void handleDisplayTimeout() {
+  display.off();
+  gState.next = States::WAIT_FOR_BUTTON;
 }

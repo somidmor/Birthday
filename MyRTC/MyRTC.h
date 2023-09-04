@@ -8,6 +8,7 @@ public:
   MyRTC();
   void begin();
   String getFormattedDateTime();
+  String getCurrentDateTime();
 };
 
 #endif

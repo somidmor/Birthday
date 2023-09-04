@@ -10,11 +10,20 @@ void MyDisplay::begin() {
 }
 
 void MyDisplay::displayString(String message) {
-  _u8g2.clearBuffer();
-  _u8g2.drawStr(0, 10, message.c_str());
-  _u8g2.sendBuffer();
-}
+    _u8g2.clearBuffer();
 
+    // Split the string by newline character and display each line.
+    int y = 8;  // Initial y position
+    int lineHeight = 12;  // Adjusting line height to 10 pixels
+    for (int i = 0; i < 3; i++) {
+        int newlinePos = message.indexOf('\n');
+        String line = message.substring(0, newlinePos);
+        _u8g2.drawStr(0, y, line.c_str());
+        y += lineHeight;
+        message.remove(0, newlinePos + 1);
+    }
+    _u8g2.sendBuffer();
+}
 
 void MyDisplay::on() {
   // In this setup, turning "on" doesn't require special action 
@@ -29,3 +38,5 @@ void MyDisplay::off() {
   // Send the blank buffer to the display
   _u8g2.sendBuffer();
 }
+
+
